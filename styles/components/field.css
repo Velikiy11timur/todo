@@ -1,0 +1,47 @@
+.field{
+    position: relative; /* Относительное позиционирование */
+    &:has(.field_input:not(:placeholder-shown)) .field_label{
+        scale: 0.7;
+        translate: -1.75em -2.6em; /* смещение относительно родительского шрифта */
+        color: var(--color-black);
+    }
+}
+
+.field_label{
+    position: absolute; /* элемент удаляется из нормального потока документа и позиционируется относительно ближайшего родительского элемента */
+    top: 50%;
+    left: 17px;
+    color: var(--color-gray-3);
+    translate: 0 -50%;
+}
+.field_input{
+    --fieldInputPaddingX: 16px;
+    --fieldSearchInputIconSize: 16px;
+
+    width: 100%;
+    height: var(--input-height); /*  почему то не получилось с переменной */
+    padding-inline: var(--fieldInputPaddingX); /* отступы от начального и конечного краёв элемента по строчной оси */
+    background-color: transparent;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    &:hover,
+    &:focus{
+        color: var(--color-dark-2);
+    }
+    &:focus{
+        background-color: var(--color-gray-1); 
+        outline: none; /* убирает выделение рамкой */
+    } /* свойства при нажатии мышкой */
+
+    &[type="search"]{
+        &:placeholder-shown{
+            padding-right: calc(
+                var(--fieldInputPaddingX) * 2 + var(--fieldSearchInputIconSize)
+            );
+            background-color: url("/icons/icon-search_black.svg");
+            background-position: calc(100% - var(--fieldInputPaddingX)) 50%;
+            background-size: var(--fieldSearchInputIconSize);
+            background-repeat: no-repeat;
+        }
+    }
+}
