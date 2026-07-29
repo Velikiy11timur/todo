@@ -3,6 +3,8 @@
   --color-orange: #FF9A00;
   --color-orangeLight: #FFD500;
   --color-green: #D5F800;
+  --color-white: #ffffff;
+  
   --border-radius: 5px;
 }
 
@@ -25,6 +27,12 @@ h1 {
   gap: 10px;
   max-width: 300px;
   margin: 0 auto;
+}
+
+.select-all-label {
+  width: 100px;
+  text-align: justify;
+  text-decoration-color: #ffffff;
 }
 
 .todo {

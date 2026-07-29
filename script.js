@@ -2,7 +2,7 @@
 
 const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); // берет из файла html
 const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); // берет из файла html
-const CHECK_ALL_ELEMENT = document.querySelector('.selectAll'); // берет из файла html
+const CHECK_ALL_ELEMENT = document.querySelector('.select-all'); // берет из файла html
 
 const CONTENT_ELEMENT = document.querySelector('.content');
 
@@ -102,6 +102,19 @@ const onCheckBoxOnHandler = (event) => {
   }
 }
 
-CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler);
-CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler);
-ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler);
+const onEnterKeyHandler = (event) => {
+  if(event.key === 'Enter') {
+    const inputValue = INPUT_TEXT_ELEMENT.value; //получаем значение из поля ввода
+    
+    if(inputValue) {
+      todos.push(createTodo(inputValue)); // Добавляем новую задачу (если значение пустое то if отрабатывает false)
+      INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
+      render(todos);  // Обновляем отображение
+    }
+  }
+}
+
+CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
+CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное 
+ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //работает туду добавляются с кнопки
+INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
