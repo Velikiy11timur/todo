@@ -36,6 +36,7 @@ function createTodoTemplate (todo) {
     <input 
       class="checkTodo" 
       type="checkbox" 
+      data-id='${todo.id}'
       ${todo.checked ? 'checked' : ''} 
     >
     <p>${todo.text}</p>
@@ -90,13 +91,13 @@ const onDeleteTodoHandler = (event) => {
 const onCheckBoxOnHandler = (event) => {
   const checkboxButton = event.target;
 
-  if (checkboxButton.classList.contains('checkTodo')) {
-    const todoElement = checkboxButton.closest('.todo'); // Находим родительский элемент (блок с задачей)
-    const todoId = todoElement.querySelector('.delete').dataset.id; // Получаем ID задачи из кнопки удаления
-    const todoIndex = todos.findIndex(todo => todo.id === Number(todoId)); //Ищем задачу в массиве по ID
+  if (checkboxButton.classList.contains('checkTodo')) { 
+    const todoId = checkboxButton.dataset.id; // Получаем ID 
+    const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
+    const todoIndex = todos.findIndex(findTodo); //Ищем задачу в массиве по ID
 
     if (todoIndex !== -1) { // если задача найдена
-      todos[todoIndex].checked = !todos[todoIndex].checked;  // Меняем значение checked на противоположное
+      todos[todoIndex].checked = checkboxButton.checked;  // 
       render(todos); // перерисовываем список
     }
   }
