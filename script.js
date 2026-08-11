@@ -3,6 +3,7 @@
 const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); // берет из файла html
 const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); // берет из файла html
 const CHECK_ALL_ELEMENT = document.querySelector('.selectAll'); // берет из файла html
+const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton')
 
 const CONTENT_ELEMENT = document.querySelector('.content');
 
@@ -23,7 +24,7 @@ function createTodoTemplate (todo) {
       class="checkTodo" 
       type="checkbox" 
       data-id='${todo.id}'
-      ${todo.checked ? 'checked' : ''} 
+      ${todo.checked ? 'checked' : ''}
     >
     <p>${todo.text}</p>
     <button data-id='${todo.id}' class="delete">X</button>
@@ -33,10 +34,10 @@ function createTodoTemplate (todo) {
 const render = (todoData) => {
   CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
-/*   todoData.forEach((todo) => {
-    const template = createTodoTemplate(todo); // callback функция
-    CONTENT_ELEMENT.innerHTML += template;
-  }); */
+  if (todos.length === 0) {
+    CHECK_ALL_ELEMENT.checked = false;
+  }
+
   for(let elem of todoData) {
      const template = createTodoTemplate(elem);
      CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
@@ -65,6 +66,7 @@ const onDeleteTodoHandler = (event) => {
                 return false;
             }
         })
+        CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
         render(todos);
     }
 }
@@ -110,8 +112,17 @@ const onCheckAllHandler = (event) => {
   render(todos);
 };
 
+const onDeleteSelectedHandler = (event) => {
+  const deleteSelectedButton = event.target;
+
+  todos = todos.filter(item => item.checked !== true); // выполняем проверку чекбокса
+  /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
+  render(todos);
+}
+
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
 CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное 
 ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //работает туду добавляются с кнопки
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
-CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется, 
+CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
+DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
