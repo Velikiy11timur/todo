@@ -13,12 +13,13 @@ function createTodo(text) {
   return {
     id: Date.now(),
     text: text, // можно использовать сокращенную запись
-    checked: false
+    checked: false,
+    isEditing: false // флаг отвечающий за редактирование
   }
 };
 
 function createTodoTemplate (todo) {
-    return `
+  return `
   <div class="todo">
     <input 
       class="checkTodo" 
@@ -26,7 +27,8 @@ function createTodoTemplate (todo) {
       data-id='${todo.id}'
       ${todo.checked ? 'checked' : ''}
     >
-    <p>${todo.text}</p>
+    ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
+    
     <button data-id='${todo.id}' class="delete">X</button>
   </div>
 `}; // '${todo.id}' кавычки нужны чтобы преобразовать number в string формат
@@ -69,7 +71,7 @@ const onDeleteTodoHandler = (event) => {
         CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
         render(todos);
     }
-}
+};
 
 const onCheckBoxOnHandler = (event) => {
   const checkboxButton = event.target;
@@ -85,13 +87,13 @@ const onCheckBoxOnHandler = (event) => {
       render(todos); // перерисовываем список
     }
   }
-}
+};
 
 const onEnterKeyHandler = (event) => {
   if(event.key === 'Enter') {
     onAddButtonClickHandler(event);
   }
-}
+};
 
 const onCheckAllHandler = (event) => {
   const checkAllButton = event.target;
@@ -118,10 +120,47 @@ const onDeleteSelectedHandler = (event) => {
   todos = todos.filter(item => item.checked !== true); // выполняем проверку чекбокса
   /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
   render(todos);
-}
+};
+
+const onBlurTextTodo = (event) => {
+	const textToBlur = event.target;
+	
+	if (textToBlur.className === 'inputEditingTodoText') {
+		const todoId = textToBlur.dataset.id; // получаем id
+    	const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
+    	const todoIndex = todos.findIndex(findTodo); //Ищем задачу в массиве по ID
+
+		if (todoIndex !== -1) {
+			todos[todoIndex].isEditing = false;
+			todos[todoIndex].text = textToBlur.value.trim() ? textToBlur.value : todos[todoIndex].text;
+			render(todos);
+		}
+	}
+};
+
+const onEditTextTodo = (event) => {
+  const textToEdit = event.target;
+  
+  if (textToEdit.className === 'descriptionTodo') {
+    const todoId = textToEdit.dataset.id; // получаем id
+    const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
+    const todoIndex = todos.findIndex(findTodo); //Ищем задачу в массиве по ID
+
+    if (todoIndex !== -1) { // если задача найдена
+      todos[todoIndex].isEditing = true;
+      render(todos);
+      const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText'); // находим появившийся input
+      INPUT_EDITING_TODO_TEXT.focus(); // взять фокус на появившийся input (можно сразу печатать)
+	  INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
+    }
+  }
+};
+
+
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
-CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное 
+CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное
+CONTENT_ELEMENT.addEventListener('dblclick', onEditTextTodo); //работает туду редактируются
 ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //работает туду добавляются с кнопки
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
 CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
