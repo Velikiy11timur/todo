@@ -1,13 +1,23 @@
 "use strict"
 
-const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); // берет из файла html
-const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); // берет из файла html
-const CHECK_ALL_ELEMENT = document.querySelector('.selectAll'); // берет из файла html
-const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton')
+const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
+const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); 
+const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
+const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
+
+const SHOW_ALL_TASKS_BUTTON = document.querySelector('.showAllTasks');
+const SHOW_COMPLETED_TASKS_BUTTON = document.querySelector('.showCompletedTasks');
+const SHOW_ACTIVE_TASKS_BUTTON = document.querySelector('.showActiveTasks');
 
 const CONTENT_ELEMENT = document.querySelector('.content');
 
 let todos = [];
+
+let filterFlags = {
+	allTasksFilterActive: true,
+	completedTasksFilterActive: false,
+	activeTasksFilterActive: false,
+};
 
 function createTodo(text) {
   return {
@@ -33,17 +43,29 @@ function createTodoTemplate (todo) {
   </div>
 `}; // '${todo.id}' кавычки нужны чтобы преобразовать number в string формат
 
+const renderFilterButtons = () => {
+	const countAllTasks = todos.length; //считает длину массива
+	const countCompletedTasks = todos.filter(elem => elem.checked === true).length; 
+	const countActiveTasks = countAllTasks-countCompletedTasks;
+
+	SHOW_ALL_TASKS_BUTTON.innerText = `All Tasks(${countAllTasks})`;
+	SHOW_COMPLETED_TASKS_BUTTON.innerText = `Completed Tasks(${countCompletedTasks})`;
+	SHOW_ACTIVE_TASKS_BUTTON.innerText = `Active Tasks(${countActiveTasks})`;
+}
+
 const render = (todoData) => {
-  CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
+	CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
-  if (todos.length === 0) {
-    CHECK_ALL_ELEMENT.checked = false;
-  }
+	if (todos.length === 0) {
+    	CHECK_ALL_ELEMENT.checked = false;
+	}
 
-  for(let elem of todoData) {
-     const template = createTodoTemplate(elem);
-     CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
-    }
+	for(let elem of todoData) {
+    	const template = createTodoTemplate(elem);
+    	CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
+	}
+
+	renderFilterButtons(); //отрисовать кнопульки и счетчики
 };
 
 const onAddButtonClickHandler = (event) => {
@@ -156,7 +178,54 @@ const onEditTextTodo = (event) => {
   }
 };
 
+const onShowAllTasksFilterHandler = (event) => {
+	const showAllTasksButton = event.target;
+	
+	filterFlags.allTasksFilterActive = true; //меняем флаг
+	filterFlags.completedTasksFilterActive = false; //меняем флаг
+	filterFlags.activeTasksFilterActive = false; //меняем флаг
 
+	if (filterFlags.allTasksFilterActive === true) {
+		SHOW_COMPLETED_TASKS_BUTTON.classList.remove('activeFilter');
+		SHOW_ALL_TASKS_BUTTON.classList.add('activeFilter');
+		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
+	};
+
+	console.log("эта кнопка показывает ВСЕ туду");
+};
+
+const onShowCompletedTasksFilterHandler = (event) => {
+	const showCompletedTasksButton = event.target;
+
+	filterFlags.allTasksFilterActive = false; //меняем флаг
+	filterFlags.completedTasksFilterActive = true; //меняем флаг
+	filterFlags.activeTasksFilterActive = false; //меняем флаг
+
+	if (filterFlags.completedTasksFilterActive === true) {
+		SHOW_COMPLETED_TASKS_BUTTON.classList.add('activeFilter');
+		SHOW_ALL_TASKS_BUTTON.classList.remove('activeFilter');
+		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
+	};
+	
+	console.log('Эта кнопка показывает ВЫПОЛНЕННЫЕ туду');
+	
+};
+
+const onShowActiveTasksFilterHandler = (event) => {
+	const ShowActiveTasksButton = event.target;
+
+	filterFlags.allTasksFilterActive = false; //меняем флаг
+	filterFlags.completedTasksFilterActive = false; //меняем флаг
+	filterFlags.activeTasksFilterActive = true; //меняем флаг
+
+	if (filterFlags.activeTasksFilterActive === true) {
+		SHOW_COMPLETED_TASKS_BUTTON.classList.remove('activeFilter');
+		SHOW_ALL_TASKS_BUTTON.classList.remove('activeFilter');
+		SHOW_ACTIVE_TASKS_BUTTON.classList.add('activeFilter');
+	};
+
+	console.log('Эта кнопка показывает АКТИВНЫЕ туду');
+};
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
 CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное
@@ -165,3 +234,6 @@ ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //раб�
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
 CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
+SHOW_ALL_TASKS_BUTTON.addEventListener('click', onShowAllTasksFilterHandler);//кнопочку нашел, пока НЕ работает
+SHOW_COMPLETED_TASKS_BUTTON.addEventListener('click', onShowCompletedTasksFilterHandler);//кнопочку нашел, пока НЕ работает
+SHOW_ACTIVE_TASKS_BUTTON.addEventListener('click', onShowActiveTasksFilterHandler);//кнопочку нашел, пока НЕ работает

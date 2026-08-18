@@ -8,7 +8,11 @@
 </head>
 <body>
   <div class="container border1">
-    <h1 class="todo_title">To Do List</h1>
+     <div class="nameApp border1">
+        <h1 class="todo_title">To Do List</h1>
+        <h5 class="productor">prod. by Velikiy11timur</h5>
+     </div>
+    
     <div class="controls">
       <div class="select-all-div">
         <input 
@@ -22,6 +26,11 @@
       <input class="todoText" type="text" placeholder="New task">
       <button class="addButton">Add</button>
       <button class="deleteSelectedButton">Delete</button> 
+    </div>
+    <div class="filters">
+        <button class="showAllTasks activeFilter">All Tasks(0)</button>
+        <button class="showCompletedTasks">Completed Tasks(0)</button>
+        <button class="showActiveTasks">Active Tasks(0)</button>
     </div>
     <div class="content border1"></div>
   </div>
