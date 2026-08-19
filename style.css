@@ -35,7 +35,7 @@ h1 {
   background-color: #ffffff;
   min-width: 70%;
   border-radius: 5px;
-  margin: 0 auto;  /* выравнивание по горизонитали */
+  margin: 0 auto;  /* выравнивание по горизонтали */
   margin-bottom: 10px;
   text-decoration: underline;
 }

@@ -12,6 +12,9 @@ const SHOW_ACTIVE_TASKS_BUTTON = document.querySelector('.showActiveTasks');
 const CONTENT_ELEMENT = document.querySelector('.content');
 
 let todos = [];
+let activeFilter = 'ALL';
+/* let todosCompleted = todos.filter(elem => elem.checked === true);
+let todosActive = todos.filter(elem => elem.checked !== true); */
 
 let filterFlags = {
 	allTasksFilterActive: true,
@@ -20,28 +23,28 @@ let filterFlags = {
 };
 
 function createTodo(text) {
-  return {
-    id: Date.now(),
-    text: text, // можно использовать сокращенную запись
-    checked: false,
-    isEditing: false // флаг отвечающий за редактирование
-  }
+	return {
+    	id: Date.now(),
+    	text: text, // можно использовать сокращенную запись
+    	checked: false,
+    	isEditing: false // флаг отвечающий за редактирование
+	}
 };
 
 function createTodoTemplate (todo) {
-  return `
-  <div class="todo">
-    <input 
-      class="checkTodo" 
-      type="checkbox" 
-      data-id='${todo.id}'
-      ${todo.checked ? 'checked' : ''}
-    >
-    ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
-    
-    <button data-id='${todo.id}' class="delete">X</button>
-  </div>
-`}; // '${todo.id}' кавычки нужны чтобы преобразовать number в string формат
+	return `
+	<div class="todo">
+		<input 
+    		class="checkTodo" 
+    		type="checkbox" 
+    		data-id='${todo.id}'
+    		${todo.checked ? 'checked' : ''}
+    	>
+    	${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
+    	<button data-id='${todo.id}' class="delete">X</button>
+	</div>
+	`
+};
 
 const renderFilterButtons = () => {
 	const countAllTasks = todos.length; //считает длину массива
@@ -58,14 +61,14 @@ const render = (todoData) => {
 
 	if (todos.length === 0) {
     	CHECK_ALL_ELEMENT.checked = false;
-	}
+	}; //проверка чекбокса
 
 	for(let elem of todoData) {
     	const template = createTodoTemplate(elem);
     	CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
 	}
 
-	renderFilterButtons(); //отрисовать кнопульки и счетчики
+	renderFilterButtons(); //отрисовать и счетчики на кнопках
 };
 
 const onAddButtonClickHandler = (event) => {
@@ -191,11 +194,12 @@ const onShowAllTasksFilterHandler = (event) => {
 		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
 	};
 
-	console.log("эта кнопка показывает ВСЕ туду");
+	render(todos);
 };
 
 const onShowCompletedTasksFilterHandler = (event) => {
 	const showCompletedTasksButton = event.target;
+	const filteredTodos = todos.filter(elem => elem.checked === true);
 
 	filterFlags.allTasksFilterActive = false; //меняем флаг
 	filterFlags.completedTasksFilterActive = true; //меняем флаг
@@ -206,13 +210,13 @@ const onShowCompletedTasksFilterHandler = (event) => {
 		SHOW_ALL_TASKS_BUTTON.classList.remove('activeFilter');
 		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
 	};
-	
-	console.log('Эта кнопка показывает ВЫПОЛНЕННЫЕ туду');
-	
+
+	render(filteredTodos);
 };
 
 const onShowActiveTasksFilterHandler = (event) => {
 	const ShowActiveTasksButton = event.target;
+	const filteredTodos = todos.filter(elem => elem.checked === false);
 
 	filterFlags.allTasksFilterActive = false; //меняем флаг
 	filterFlags.completedTasksFilterActive = false; //меняем флаг
@@ -224,7 +228,7 @@ const onShowActiveTasksFilterHandler = (event) => {
 		SHOW_ACTIVE_TASKS_BUTTON.classList.add('activeFilter');
 	};
 
-	console.log('Эта кнопка показывает АКТИВНЫЕ туду');
+	render(filteredTodos);
 };
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
