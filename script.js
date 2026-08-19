@@ -5,29 +5,19 @@ const INPUT_TEXT_ELEMENT = document.querySelector('.todoText');
 const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
 const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
 
-const SHOW_ALL_TASKS_BUTTON = document.querySelector('.showAllTasks');
-const SHOW_COMPLETED_TASKS_BUTTON = document.querySelector('.showCompletedTasks');
-const SHOW_ACTIVE_TASKS_BUTTON = document.querySelector('.showActiveTasks');
+const FILTERS_WRAPPER = document.querySelector('.filters');
 
 const CONTENT_ELEMENT = document.querySelector('.content');
 
 let todos = [];
-let activeFilter = 'ALL';
-/* let todosCompleted = todos.filter(elem => elem.checked === true);
-let todosActive = todos.filter(elem => elem.checked !== true); */
-
-let filterFlags = {
-	allTasksFilterActive: true,
-	completedTasksFilterActive: false,
-	activeTasksFilterActive: false,
-};
+let activeFilterId = 'allFilter';
 
 function createTodo(text) {
 	return {
-    	id: Date.now(),
-    	text: text, // можно использовать сокращенную запись
-    	checked: false,
-    	isEditing: false // флаг отвечающий за редактирование
+    id: Date.now(),
+    text: text, // можно использовать сокращенную запись
+    checked: false,
+    isEditing: false // флаг отвечающий за редактирование
 	}
 };
 
@@ -44,31 +34,49 @@ function createTodoTemplate (todo) {
     	<button data-id='${todo.id}' class="delete">X</button>
 	</div>
 	`
-};
+}; //эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
 
 const renderFilterButtons = () => {
 	const countAllTasks = todos.length; //считает длину массива
 	const countCompletedTasks = todos.filter(elem => elem.checked === true).length; 
 	const countActiveTasks = countAllTasks-countCompletedTasks;
 
-	SHOW_ALL_TASKS_BUTTON.innerText = `All Tasks(${countAllTasks})`;
-	SHOW_COMPLETED_TASKS_BUTTON.innerText = `Completed Tasks(${countCompletedTasks})`;
-	SHOW_ACTIVE_TASKS_BUTTON.innerText = `Active Tasks(${countActiveTasks})`;
+  const isAllFilterOn = activeFilterId === 'allFilter';
+  const isCompletedFilterOn = activeFilterId === 'completedFilter';
+  const isActiveFilterOn = !isAllFilterOn && !isCompletedFilterOn;
+
+  const buttonTemplate = `
+    <button class="showAllTasks ${isAllFilterOn ? 'activeFilter' : ''}" data-id="allFilter">All Tasks(${countAllTasks})</button>
+    <button class="showCompletedTasks ${isCompletedFilterOn ? 'activeFilter' : ''}" data-id="completedFilter">Completed Tasks(${countCompletedTasks})</button>
+    <button class="showActiveTasks ${isActiveFilterOn ? 'activeFilter' : ''}" data-id="activeFilter">Active Tasks(${countActiveTasks})</button>
+  `;
+
+  FILTERS_WRAPPER.innerHTML = buttonTemplate;
 }
 
 const render = (todoData) => {
 	CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
 	if (todos.length === 0) {
-    	CHECK_ALL_ELEMENT.checked = false;
+    CHECK_ALL_ELEMENT.checked = false;
 	}; //проверка чекбокса
 
 	for(let elem of todoData) {
-    	const template = createTodoTemplate(elem);
-    	CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
+    CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + createTodoTemplate(elem); // "к старому добавь новое и закинь все это назад"
+	}
+};
+
+const renderWithFilters = () => {
+	let filteredTodos = todos; //если 2 условия не сработали, остаётся как было
+
+	if (activeFilterId === 'completedFilter') {
+		filteredTodos = todos.filter(elem => elem.checked);
+	} else if (activeFilterId === 'activeFilter') {
+		filteredTodos = todos.filter(elem => !elem.checked);
 	}
 
-	renderFilterButtons(); //отрисовать и счетчики на кнопках
+	render(filteredTodos);
+  renderFilterButtons(); //отрисовать и счетчики на кнопках
 };
 
 const onAddButtonClickHandler = (event) => {
@@ -78,7 +86,8 @@ const onAddButtonClickHandler = (event) => {
     todos.push(createTodo(inputValue)); // Добавляем новую задачу (если значение пустое то if отрабатывает false)
     INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
     CHECK_ALL_ELEMENT.checked = false;
-    render(todos);  // Обновляем отображение
+    activeFilterId = 'allFilter';
+    renderWithFilters();
   }
 };
 
@@ -94,7 +103,7 @@ const onDeleteTodoHandler = (event) => {
             }
         })
         CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
-        render(todos);
+        renderWithFilters();
     }
 };
 
@@ -109,7 +118,7 @@ const onCheckBoxOnHandler = (event) => {
     if (todoIndex !== -1) { // если задача найдена
       todos[todoIndex].checked = checkboxButton.checked; 
       CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
-      render(todos); // перерисовываем список
+      renderWithFilters();
     }
   }
 };
@@ -123,20 +132,8 @@ const onEnterKeyHandler = (event) => {
 const onCheckAllHandler = (event) => {
   const checkAllButton = event.target;
 
-  /* todos = todos.map(elem => {
-    return {
-      id: elem.id,
-      text: elem.text,
-      checked: checkAllButton.checked,
-    }
-  }); */
-
-  /* todos = todos.map(elem => ({ id: elem.id, text: elem.text, checked: checkAllButton.checked })); */
-
-  /* todos = todos.map(elem => ({ id: elem.id, text: elem.text, checked: elem.checked, checked: checkAllButton.checked })); */
-
   todos = todos.map(elem => ({ ...elem, checked: checkAllButton.checked }));
-  render(todos);
+  renderWithFilters();
 };
 
 const onDeleteSelectedHandler = (event) => {
@@ -144,7 +141,7 @@ const onDeleteSelectedHandler = (event) => {
 
   todos = todos.filter(item => item.checked !== true); // выполняем проверку чекбокса
   /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
-  render(todos);
+  renderWithFilters();
 };
 
 const onBlurTextTodo = (event) => {
@@ -158,7 +155,7 @@ const onBlurTextTodo = (event) => {
 		if (todoIndex !== -1) {
 			todos[todoIndex].isEditing = false;
 			todos[todoIndex].text = textToBlur.value.trim() ? textToBlur.value : todos[todoIndex].text;
-			render(todos);
+			renderWithFilters();
 		}
 	}
 };
@@ -173,63 +170,23 @@ const onEditTextTodo = (event) => {
 
     if (todoIndex !== -1) { // если задача найдена
       todos[todoIndex].isEditing = true;
-      render(todos);
+      renderWithFilters();
       const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText'); // находим появившийся input
       INPUT_EDITING_TODO_TEXT.focus(); // взять фокус на появившийся input (можно сразу печатать)
-	  INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
+	    INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
     }
   }
 };
 
-const onShowAllTasksFilterHandler = (event) => {
-	const showAllTasksButton = event.target;
-	
-	filterFlags.allTasksFilterActive = true; //меняем флаг
-	filterFlags.completedTasksFilterActive = false; //меняем флаг
-	filterFlags.activeTasksFilterActive = false; //меняем флаг
+const onFiltersButtonClickHandler = (event) => {
+	const filterButton = event.target;
 
-	if (filterFlags.allTasksFilterActive === true) {
-		SHOW_COMPLETED_TASKS_BUTTON.classList.remove('activeFilter');
-		SHOW_ALL_TASKS_BUTTON.classList.add('activeFilter');
-		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
-	};
+	if (event.target.dataset.id) {
+		activeFilterId = event.target.dataset.id;
 
-	render(todos);
-};
-
-const onShowCompletedTasksFilterHandler = (event) => {
-	const showCompletedTasksButton = event.target;
-	const filteredTodos = todos.filter(elem => elem.checked === true);
-
-	filterFlags.allTasksFilterActive = false; //меняем флаг
-	filterFlags.completedTasksFilterActive = true; //меняем флаг
-	filterFlags.activeTasksFilterActive = false; //меняем флаг
-
-	if (filterFlags.completedTasksFilterActive === true) {
-		SHOW_COMPLETED_TASKS_BUTTON.classList.add('activeFilter');
-		SHOW_ALL_TASKS_BUTTON.classList.remove('activeFilter');
-		SHOW_ACTIVE_TASKS_BUTTON.classList.remove('activeFilter');
-	};
-
-	render(filteredTodos);
-};
-
-const onShowActiveTasksFilterHandler = (event) => {
-	const ShowActiveTasksButton = event.target;
-	const filteredTodos = todos.filter(elem => elem.checked === false);
-
-	filterFlags.allTasksFilterActive = false; //меняем флаг
-	filterFlags.completedTasksFilterActive = false; //меняем флаг
-	filterFlags.activeTasksFilterActive = true; //меняем флаг
-
-	if (filterFlags.activeTasksFilterActive === true) {
-		SHOW_COMPLETED_TASKS_BUTTON.classList.remove('activeFilter');
-		SHOW_ALL_TASKS_BUTTON.classList.remove('activeFilter');
-		SHOW_ACTIVE_TASKS_BUTTON.classList.add('activeFilter');
-	};
-
-	render(filteredTodos);
-};
+    renderWithFilters();
+	}
+}
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
 CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное
@@ -238,6 +195,4 @@ ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //раб�
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
 CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
-SHOW_ALL_TASKS_BUTTON.addEventListener('click', onShowAllTasksFilterHandler);//кнопочку нашел, пока НЕ работает
-SHOW_COMPLETED_TASKS_BUTTON.addEventListener('click', onShowCompletedTasksFilterHandler);//кнопочку нашел, пока НЕ работает
-SHOW_ACTIVE_TASKS_BUTTON.addEventListener('click', onShowActiveTasksFilterHandler);//кнопочку нашел, пока НЕ работает
+FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler);
