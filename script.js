@@ -1,49 +1,82 @@
 "use strict"
 
-const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); // берет из файла html
-const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); // берет из файла html
-const CHECK_ALL_ELEMENT = document.querySelector('.selectAll'); // берет из файла html
-const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton')
+const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
+const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); 
+const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
+const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
+
+const FILTERS_WRAPPER = document.querySelector('.filters');
 
 const CONTENT_ELEMENT = document.querySelector('.content');
 
 let todos = [];
+let activeFilterId = 'allFilter';
 
 function createTodo(text) {
-  return {
+	return {
     id: Date.now(),
     text: text, // можно использовать сокращенную запись
     checked: false,
     isEditing: false // флаг отвечающий за редактирование
-  }
+	}
 };
 
 function createTodoTemplate (todo) {
-  return `
-  <div class="todo">
-    <input 
-      class="checkTodo" 
-      type="checkbox" 
-      data-id='${todo.id}'
-      ${todo.checked ? 'checked' : ''}
-    >
-    ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
-    
-    <button data-id='${todo.id}' class="delete">X</button>
-  </div>
-`}; // '${todo.id}' кавычки нужны чтобы преобразовать number в string формат
+	return `
+	<div class="todo">
+		<input 
+    		class="checkTodo" 
+    		type="checkbox" 
+    		data-id='${todo.id}'
+    		${todo.checked ? 'checked' : ''}
+    	>
+    	${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
+    	<button data-id='${todo.id}' class="delete">X</button>
+	</div>
+	`
+}; //эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
+
+const renderFilterButtons = () => {
+	const countAllTasks = todos.length; //считает длину массива
+	const countCompletedTasks = todos.filter(elem => elem.checked === true).length; 
+	const countActiveTasks = countAllTasks-countCompletedTasks;
+
+  const isAllFilterOn = activeFilterId === 'allFilter';
+  const isCompletedFilterOn = activeFilterId === 'completedFilter';
+  const isActiveFilterOn = !isAllFilterOn && !isCompletedFilterOn;
+
+  const buttonTemplate = `
+    <button class="showAllTasks ${isAllFilterOn ? 'activeFilter' : ''}" data-id="allFilter">All Tasks(${countAllTasks})</button>
+    <button class="showCompletedTasks ${isCompletedFilterOn ? 'activeFilter' : ''}" data-id="completedFilter">Completed Tasks(${countCompletedTasks})</button>
+    <button class="showActiveTasks ${isActiveFilterOn ? 'activeFilter' : ''}" data-id="activeFilter">Active Tasks(${countActiveTasks})</button>
+  `;
+
+  FILTERS_WRAPPER.innerHTML = buttonTemplate;
+}
 
 const render = (todoData) => {
-  CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
+	CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
-  if (todos.length === 0) {
+	if (todos.length === 0) {
     CHECK_ALL_ELEMENT.checked = false;
-  }
+	}; //проверка чекбокса
 
-  for(let elem of todoData) {
-     const template = createTodoTemplate(elem);
-     CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + template; // "к старому добавь новое и закинь все это назад"
-    }
+	for(let elem of todoData) {
+    CONTENT_ELEMENT.innerHTML = CONTENT_ELEMENT.innerHTML + createTodoTemplate(elem); // "к старому добавь новое и закинь все это назад"
+	}
+};
+
+const renderWithFilters = () => {
+	let filteredTodos = todos; //если 2 условия не сработали, остаётся как было
+
+	if (activeFilterId === 'completedFilter') {
+		filteredTodos = todos.filter(elem => elem.checked);
+	} else if (activeFilterId === 'activeFilter') {
+		filteredTodos = todos.filter(elem => !elem.checked);
+	}
+
+	render(filteredTodos);
+  renderFilterButtons(); //отрисовать и счетчики на кнопках
 };
 
 const onAddButtonClickHandler = (event) => {
@@ -53,7 +86,8 @@ const onAddButtonClickHandler = (event) => {
     todos.push(createTodo(inputValue)); // Добавляем новую задачу (если значение пустое то if отрабатывает false)
     INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
     CHECK_ALL_ELEMENT.checked = false;
-    render(todos);  // Обновляем отображение
+    activeFilterId = 'allFilter';
+    renderWithFilters();
   }
 };
 
@@ -69,7 +103,7 @@ const onDeleteTodoHandler = (event) => {
             }
         })
         CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
-        render(todos);
+        renderWithFilters();
     }
 };
 
@@ -84,7 +118,7 @@ const onCheckBoxOnHandler = (event) => {
     if (todoIndex !== -1) { // если задача найдена
       todos[todoIndex].checked = checkboxButton.checked; 
       CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
-      render(todos); // перерисовываем список
+      renderWithFilters();
     }
   }
 };
@@ -98,20 +132,8 @@ const onEnterKeyHandler = (event) => {
 const onCheckAllHandler = (event) => {
   const checkAllButton = event.target;
 
-  /* todos = todos.map(elem => {
-    return {
-      id: elem.id,
-      text: elem.text,
-      checked: checkAllButton.checked,
-    }
-  }); */
-
-  /* todos = todos.map(elem => ({ id: elem.id, text: elem.text, checked: checkAllButton.checked })); */
-
-  /* todos = todos.map(elem => ({ id: elem.id, text: elem.text, checked: elem.checked, checked: checkAllButton.checked })); */
-
   todos = todos.map(elem => ({ ...elem, checked: checkAllButton.checked }));
-  render(todos);
+  renderWithFilters();
 };
 
 const onDeleteSelectedHandler = (event) => {
@@ -119,7 +141,7 @@ const onDeleteSelectedHandler = (event) => {
 
   todos = todos.filter(item => item.checked !== true); // выполняем проверку чекбокса
   /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
-  render(todos);
+  renderWithFilters();
 };
 
 const onBlurTextTodo = (event) => {
@@ -133,7 +155,7 @@ const onBlurTextTodo = (event) => {
 		if (todoIndex !== -1) {
 			todos[todoIndex].isEditing = false;
 			todos[todoIndex].text = textToBlur.value.trim() ? textToBlur.value : todos[todoIndex].text;
-			render(todos);
+			renderWithFilters();
 		}
 	}
 };
@@ -148,15 +170,23 @@ const onEditTextTodo = (event) => {
 
     if (todoIndex !== -1) { // если задача найдена
       todos[todoIndex].isEditing = true;
-      render(todos);
+      renderWithFilters();
       const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText'); // находим появившийся input
       INPUT_EDITING_TODO_TEXT.focus(); // взять фокус на появившийся input (можно сразу печатать)
-	  INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
+	    INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
     }
   }
 };
 
+const onFiltersButtonClickHandler = (event) => {
+	const filterButton = event.target;
 
+	if (event.target.dataset.id) {
+		activeFilterId = event.target.dataset.id;
+
+    renderWithFilters();
+	}
+}
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
 CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное
@@ -165,3 +195,4 @@ ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //раб�
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
 CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
+FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler);
