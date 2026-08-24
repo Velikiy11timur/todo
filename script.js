@@ -1,9 +1,9 @@
-"use strict"
-
 const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
 const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); 
 const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
 const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
+
+const PAGINATION_CONTAINER = document.querySelector('.paginationContainer');
 
 const FILTERS_WRAPPER = document.querySelector('.filters');
 
@@ -11,6 +11,9 @@ const CONTENT_ELEMENT = document.querySelector('.content');
 
 let todos = [];
 let activeFilterId = 'allFilter';
+let actualPage = 1;
+
+const TODOS_ON_PAGE = 5; //указали количество тудух на странице*
 
 function createTodo(text) {
 	return {
@@ -34,11 +37,11 @@ function createTodoTemplate (todo) {
     	<button data-id='${todo.id}' class="delete">X</button>
 	</div>
 	`
-}; //эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
+}; // эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
 
 const renderFilterButtons = () => {
 	const countAllTasks = todos.length; //считает длину массива
-	const countCompletedTasks = todos.filter(elem => elem.checked === true).length; 
+	const countCompletedTasks = todos.filter(elem => elem.checked === true).length;
 	const countActiveTasks = countAllTasks-countCompletedTasks;
 
   const isAllFilterOn = activeFilterId === 'allFilter';
@@ -52,7 +55,15 @@ const renderFilterButtons = () => {
   `;
 
   FILTERS_WRAPPER.innerHTML = buttonTemplate;
-}
+};
+
+const renderPaginationButtons = (lengthMassive) => {
+  PAGINATION_CONTAINER.innerHTML = ''; // очистить контент внутри div
+  
+  for (let i = 1; Math.ceil(lengthMassive/TODOS_ON_PAGE) >= i; i++) {
+    PAGINATION_CONTAINER.innerHTML += `<button class="btn1 ${actualPage === i ? 'activeFilter' : ''}" data-id="${i}">${i}</button>`;
+  }
+};
 
 const render = (todoData) => {
 	CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
@@ -75,8 +86,28 @@ const renderWithFilters = () => {
 		filteredTodos = todos.filter(elem => !elem.checked);
 	}
 
-	render(filteredTodos);
+  const start = (actualPage - 1) * TODOS_ON_PAGE;
+  let pagedTodos = filteredTodos.slice(start, start + TODOS_ON_PAGE)
+
+  if (pagedTodos.length === 0 && actualPage !== 1) {
+    actualPage -= 1;
+    const newStart = (actualPage - 1) * TODOS_ON_PAGE;
+    pagedTodos = filteredTodos.slice(newStart, newStart + TODOS_ON_PAGE);
+  }
+
+	render(pagedTodos);
   renderFilterButtons(); //отрисовать и счетчики на кнопках
+  renderPaginationButtons(filteredTodos.length);
+};
+
+const onPageButtonHandler = (event) => {
+  const buttonPage = event.target;
+
+  if (buttonPage.dataset.id) {
+    actualPage = Number(buttonPage.dataset.id);
+  }
+
+  renderWithFilters();
 };
 
 const onAddButtonClickHandler = (event) => {
@@ -87,24 +118,25 @@ const onAddButtonClickHandler = (event) => {
     INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
     CHECK_ALL_ELEMENT.checked = false;
     activeFilterId = 'allFilter';
+    actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
     renderWithFilters();
   }
 };
 
 const onDeleteTodoHandler = (event) => {
-    const deleteButton = event.target
+  const deleteButton = event.target
 
-    if (deleteButton.className == 'delete') {
-        todos = todos.filter((todo) => {
-            if (todo.id !== Number(deleteButton.dataset.id)) {
-                return true;
-            } else {
-                return false;
-            }
-        })
-        CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
-        renderWithFilters();
-    }
+  if (deleteButton.className == 'delete') {
+    todos = todos.filter((todo) => {
+      if (todo.id !== Number(deleteButton.dataset.id)) {
+          return true;
+      } else {
+          return false;
+      }
+    })
+    CHECK_ALL_ELEMENT.checked = todos.every(elem => elem.checked !== false); //работает как надо
+    renderWithFilters();
+  }
 };
 
 const onCheckBoxOnHandler = (event) => {
@@ -179,14 +211,14 @@ const onEditTextTodo = (event) => {
 };
 
 const onFiltersButtonClickHandler = (event) => {
-	const filterButton = event.target;
+	const filterButton = event.target.dataset.id;
 
-	if (event.target.dataset.id) {
-		activeFilterId = event.target.dataset.id;
-
+	if (filterButton) {
+		activeFilterId = filterButton;
+    actualPage = 1;
     renderWithFilters();
 	}
-}
+};
 
 CONTENT_ELEMENT.addEventListener('click', onDeleteTodoHandler); //работает туду удаляются
 CONTENT_ELEMENT.addEventListener('click', onCheckBoxOnHandler); //работает меняет значение checked на противоположное
@@ -195,4 +227,5 @@ ADD_BUTTON_ELEMENT.addEventListener('click', onAddButtonClickHandler); //раб�
 INPUT_TEXT_ELEMENT.addEventListener('keydown', onEnterKeyHandler); //работает туду добавляются с клавиши Enter
 CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работает, все выделяется/выделения снимаются
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
-FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler);
+FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler); // работает фильтрация туду
+PAGINATION_CONTAINER.addEventListener('click', onPageButtonHandler); // работает пагинация вместе с фильтрацией
