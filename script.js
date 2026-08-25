@@ -1,4 +1,5 @@
-const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
+(() => {
+  const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
 const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); 
 const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
 const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
@@ -229,3 +230,4 @@ CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работа�
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
 FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler); // работает фильтрация туду
 PAGINATION_CONTAINER.addEventListener('click', onPageButtonHandler); // работает пагинация вместе с фильтрацией
+})();
