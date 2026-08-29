@@ -1,4 +1,5 @@
-const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
+(() => {
+  const ADD_BUTTON_ELEMENT = document.querySelector('.addButton'); 
 const INPUT_TEXT_ELEMENT = document.querySelector('.todoText'); 
 const CHECK_ALL_ELEMENT = document.querySelector('.selectAll');
 const DELETE_SELECTED_BUTTON = document.querySelector('.deleteSelectedButton');
@@ -111,7 +112,7 @@ const onPageButtonHandler = (event) => {
 };
 
 const onAddButtonClickHandler = (event) => {
-  const inputValue = INPUT_TEXT_ELEMENT.value; //получаем значение из поля ввода
+  const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); //получаем значение из поля ввода
     
   if(inputValue) {
     todos.push(createTodo(inputValue)); // Добавляем новую задачу (если значение пустое то if отрабатывает false)
@@ -186,7 +187,7 @@ const onBlurTextTodo = (event) => {
 
 		if (todoIndex !== -1) {
 			todos[todoIndex].isEditing = false;
-			todos[todoIndex].text = textToBlur.value.trim() ? textToBlur.value : todos[todoIndex].text;
+			todos[todoIndex].text = textToBlur.value.trim() ? _.escape(textToBlur.value) : todos[todoIndex].text;
 			renderWithFilters();
 		}
 	}
@@ -229,3 +230,4 @@ CHECK_ALL_ELEMENT.addEventListener('click', onCheckAllHandler); // работа�
 DELETE_SELECTED_BUTTON.addEventListener('click', onDeleteSelectedHandler); // работает, выделенные туду удаляются
 FILTERS_WRAPPER.addEventListener('click', onFiltersButtonClickHandler); // работает фильтрация туду
 PAGINATION_CONTAINER.addEventListener('click', onPageButtonHandler); // работает пагинация вместе с фильтрацией
+})();
