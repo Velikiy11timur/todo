@@ -49,9 +49,9 @@ const renderFilterButtons = () => {
   const isActiveFilterOn = !isAllFilterOn && !isCompletedFilterOn;
 
   const buttonTemplate = `
-    <button class="showAllTasks ${isAllFilterOn ? 'activeFilter' : ''}" data-id="allFilter">All Tasks(${countAllTasks})</button>
-    <button class="showCompletedTasks ${isCompletedFilterOn ? 'activeFilter' : ''}" data-id="completedFilter">Completed Tasks(${countCompletedTasks})</button>
-    <button class="showActiveTasks ${isActiveFilterOn ? 'activeFilter' : ''}" data-id="activeFilter">Active Tasks(${countActiveTasks})</button>
+    <button class="showAllTasks buttonType1 ${isAllFilterOn ? 'activeFilter' : ''}" data-id="allFilter">All Tasks(${countAllTasks})</button>
+    <button class="showCompletedTasks buttonType1 ${isCompletedFilterOn ? 'activeFilter' : ''}" data-id="completedFilter">Completed Tasks(${countCompletedTasks})</button>
+    <button class="showActiveTasks buttonType1 ${isActiveFilterOn ? 'activeFilter' : ''}" data-id="activeFilter">Active Tasks(${countActiveTasks})</button>
   `;
 
   FILTERS_WRAPPER.innerHTML = buttonTemplate;
