@@ -16,7 +16,29 @@
   let activeFilterId = 'allFilter';
   let actualPage = 1;
 
-  const TODOS_ON_PAGE = 5; // указали количество тудух на странице*
+  async function getTodos() {
+    //адрес запроса на получение в формате json todo объектов
+    const url = 'http://localhost:5000/todos/getTodos';
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      //деструктурировал массив туду, переименовываем ключ
+      const { todos: todosFromDB } = result;
+      todos = todosFromDB;
+      renderWithFilters();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  getTodos();
+
+  const TODOS_ON_PAGE = 5; // указали количество todo на странице*
 
   function createTodo(text) {
     return {
@@ -173,7 +195,7 @@
 
   const onDeleteSelectedHandler = () => {
     todos = todos.filter((item) => item.checked !== true); // выполняем проверку чекбокса
-    /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
+    /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букв чем лучше)
     renderWithFilters();
   };
 
