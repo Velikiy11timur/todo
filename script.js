@@ -21,6 +21,7 @@
     const url = 'http://localhost:5000/todos/getTodos';
 
     try {
+      // await приостанавливает выполнение операции, пока не выполниться Promise fetch(url)
       const response = await fetch(url);
       if (!response.ok) {
       throw new Error(`Response status: ${response.status}`);
@@ -38,30 +39,49 @@
 
   getTodos();
 
-  const TODOS_ON_PAGE = 5; // указали количество todo на странице*
+  const TODOS_ON_PAGE = 10; // указали количество todo на странице*
 
-  function createTodo(text) {
-    return {
-      id: Date.now(),
-      text, // можно использовать сокращенную запись
+  async function createTodo (text) {
+    const objectTodoModel = {
+      text: text,
       checked: false,
-      isEditing: false, // флаг отвечающий за редактирование
-    };
+      isEditing: false,
+    }
+
+    // запрос который создает туду, принимая в теле запроса в формате json строку с параметрами
+    const url = 'http://localhost:5000/todo/create';
+    try {
+      const response = await fetch(url, {
+        //сообщаем что метод будет POST а не по умолчанию GET
+        method: 'POST',
+        //заголовок запроса сообщающий что тело запроса будет в формате json
+        headers: {
+          'Content-type': 'application/json' 
+        },
+        body: JSON.stringify(objectTodoModel)
+      });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      getTodos();
+    } catch (error) {
+      console.error(error.message);
+    }
   }
 
   function createTodoTemplate(todo) {
     return `
-  <div class="todo">
-    <input 
-      class="checkTodo" 
-      type="checkbox" 
-      data-id='${todo.id}'
-      ${todo.checked ? 'checked' : ''}
-    >
-    ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
-    <button data-id='${todo.id}' class="delete">X</button>
-  </div>
-  `;
+    <div class="todo">
+      <input 
+        class="checkTodo" 
+        type="checkbox" 
+        data-id='${todo.id}'
+        ${todo.checked ? 'checked' : ''}
+      >
+      ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
+      <button data-id='${todo.id}' class="delete">X</button>
+    </div>
+    `;
   } // эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
 
   const renderFilterButtons = () => {
@@ -119,7 +139,6 @@
       const newStart = (actualPage - 1) * TODOS_ON_PAGE;
       pagedTodos = filteredTodos.slice(newStart, newStart + TODOS_ON_PAGE);
     }
-
     render(pagedTodos);
     renderFilterButtons(); // отрисовать и счетчики на кнопках
     renderPaginationButtons(filteredTodos.length);
@@ -135,17 +154,36 @@
     renderWithFilters();
   };
 
-  const onAddButtonClickHandler = () => {
-    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); // получаем значение из поля ввода
+  //функция возвращает promise
+  const onAddButtonClickHandler = async () => {
+    // получаем значение из поля ввода
+    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); 
 
     if (inputValue) {
+      try {
+      // Ждём, пока сервер создаст задачу и вернёт объект с данными
+      const newTodo = await createTodo(inputValue);
+
       // Добавляем новую задачу (если значение пустое то if отрабатывает false)
-      todos.push(createTodo(inputValue));
-      INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
+      todos.push(newTodo);
+      
+      // Очищаем поле ввода
+      INPUT_TEXT_ELEMENT.value = '';
+      
+      // сброс чекбокса "все выполнено"
       CHECK_ALL_ELEMENT.checked = false;
+
+      //обновляем фильтр (при добавлении начальный экран)
       activeFilterId = 'allFilter';
+
+      // обновляем пагинацию
       actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
+
+      //конечный рендер
       renderWithFilters();
+      } catch (error) {
+        console.error('Не удалось создать задачу:', error.message);
+      }
     }
   };
 
