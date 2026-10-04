@@ -38,7 +38,7 @@
   }
 
   getTodos();
-
+  
   const TODOS_ON_PAGE = 10; // указали количество todo на странице*
 
   async function createTodo (text) {
@@ -187,18 +187,26 @@
     }
   };
 
-  const onDeleteTodoHandler = (event) => {
+  const onDeleteTodoHandler = async (event) => {
     const deleteButton = event.target;
-
+    
+    //проверяем по классу кнопки, нужная ли кнопка нажата
     if (deleteButton.className === 'delete') {
-      todos = todos.filter((todo) => {
-        if (todo.id !== Number(deleteButton.dataset.id)) {
-          return true;
-        }
-        return false;
+      try {
+      //находим dataset.id (которая является id todo)
+      const url = `http://localhost:5000/todo/deleteTodo/${event.target.dataset.id}`;
+      const response = await fetch(url, {
+        method:'DELETE',
       });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      } catch (error) {
+        console.error(error.message);
+      }
+      getTodos();
+      //проверка чекбокса
       CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
-      renderWithFilters();
     }
   };
 
