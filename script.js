@@ -32,6 +32,8 @@
       const { todos: todosFromDB } = result;
       todos = todosFromDB;
       renderWithFilters();
+      //проверка чекбокса selectAll
+      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
     } catch (error) {
       console.error(error.message);
     }
@@ -113,9 +115,10 @@
   const render = (todoData) => {
     CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
+    // проверка чекбокса
     if (todos.length === 0) {
       CHECK_ALL_ELEMENT.checked = false;
-    } // проверка чекбокса
+    } 
 
     todoData.forEach((elem) => {
       CONTENT_ELEMENT.innerHTML += createTodoTemplate(elem);
@@ -154,7 +157,6 @@
     renderWithFilters();
   };
 
-  //функция возвращает promise
   const onAddButtonClickHandler = async () => {
     // получаем значение из поля ввода
     const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); 
@@ -205,23 +207,50 @@
         console.error(error.message);
       }
       getTodos();
-      //проверка чекбокса
-      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
     }
   };
 
-  const onCheckBoxOnHandler = (event) => {
+  const onCheckBoxOnHandler = async (event) => {
     const checkboxButton = event.target;
 
+    //проверяем по классу что нажат чекбокс на самой todo
     if (checkboxButton.classList.contains('checkTodo')) {
-      const todoId = checkboxButton.dataset.id; // Получаем ID
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+      try {
+        // Получаем ID нажатого чекбокса
+        const todoId = checkboxButton.dataset.id;
 
-      if (todoIndex !== -1) { // если задача найдена
-        todos[todoIndex].checked = checkboxButton.checked;
-        CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
-        renderWithFilters();
+        //url на PATCH, принимает тело запроса
+        const url = `http://localhost:5000/todo/update/${todoId}`;
+
+        //находим индекс нажатой todo в массиве
+        const todoIndex = todos.findIndex(elem => elem.id === Number(todoId))
+
+        // находим состояние поля checked у найденной todo (true/false)
+        const todoStatus = () => {
+          return todos[todoIndex].checked;
+        }
+
+        //если todoStatus = true, то при нажатии на чекбокс меняется на false
+        const responseBody = todoStatus() ? false : true;
+        try {
+          const response = await fetch(url, {
+            method: 'PATCH',
+            //заголовок запроса сообщающий что тело запроса будет в формате json
+            headers: {
+              'Content-type': 'application/json' 
+            },
+            body: JSON.stringify({"checked":responseBody})
+          })
+          if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error(error.message);
+        }
+        //берем данные с БД + рендер
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
       }
     }
   };
