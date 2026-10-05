@@ -41,7 +41,7 @@
 
   getTodos();
   
-  const TODOS_ON_PAGE = 10; // указали количество todo на странице*
+  const TODOS_ON_PAGE = 7; // указали количество todo на странице*
 
   function createTodoTemplate(todo) {
     return `
@@ -56,7 +56,7 @@
       <button data-id='${todo.id}' class="delete">X</button>
     </div>
     `;
-  } // эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
+  }
 
   const renderFilterButtons = () => {
     const countAllTasks = todos.length; // считает длину массива
@@ -254,10 +254,19 @@
     renderWithFilters();
   };
 
-  const onDeleteSelectedHandler = () => {
-    todos = todos.filter((item) => item.checked !== true); // выполняем проверку чекбокса
-    /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букв чем лучше)
-    renderWithFilters();
+  const onDeleteSelectedHandler = async () => {
+    const url = 'http://localhost:5000/todos/deleteChecked';
+    try {
+      const response = await fetch(url, {
+        method:'DELETE',
+      });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      getTodos();
+    } catch (error) {
+      console.error(error.message);
+    }
   };
 
   const onBlurTextTodo = (event) => {
