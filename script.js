@@ -43,34 +43,6 @@
   
   const TODOS_ON_PAGE = 10; // указали количество todo на странице*
 
-  async function createTodo (text) {
-    const objectTodoModel = {
-      text: text,
-      checked: false,
-      isEditing: false,
-    }
-
-    // запрос который создает туду, принимая в теле запроса в формате json строку с параметрами
-    const url = 'http://localhost:5000/todo/create';
-    try {
-      const response = await fetch(url, {
-        //сообщаем что метод будет POST а не по умолчанию GET
-        method: 'POST',
-        //заголовок запроса сообщающий что тело запроса будет в формате json
-        headers: {
-          'Content-type': 'application/json' 
-        },
-        body: JSON.stringify(objectTodoModel)
-      });
-      if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-      }
-      getTodos();
-    } catch (error) {
-      console.error(error.message);
-    }
-  }
-
   function createTodoTemplate(todo) {
     return `
     <div class="todo">
@@ -159,15 +131,31 @@
 
   const onAddButtonClickHandler = async () => {
     // получаем значение из поля ввода
-    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); 
+    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value);
+    const objectTodoModel = {
+      text: inputValue,
+      checked: false,
+      isEditing: false,
+    }
+    // запрос который создает туду, принимая в теле запроса в формате json строку с параметрами
+    const url = 'http://localhost:5000/todo/create';
 
     if (inputValue) {
       try {
-      // Ждём, пока сервер создаст задачу и вернёт объект с данными
-      const newTodo = await createTodo(inputValue);
-
-      // Добавляем новую задачу (если значение пустое то if отрабатывает false)
-      todos.push(newTodo);
+      const response = await fetch(url, {
+        //сообщаем что метод будет POST, а не по умолчанию GET
+        method: 'POST',
+        //заголовок запроса сообщающий что тело запроса будет в формате json
+        headers: {
+          'Content-type': 'application/json' 
+        },
+        body: JSON.stringify(objectTodoModel)
+      });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      //конечный рендер
+      getTodos();
       
       // Очищаем поле ввода
       INPUT_TEXT_ELEMENT.value = '';
@@ -181,8 +169,6 @@
       // обновляем пагинацию
       actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
 
-      //конечный рендер
-      renderWithFilters();
       } catch (error) {
         console.error('Не удалось создать задачу:', error.message);
       }
