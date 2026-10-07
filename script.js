@@ -247,11 +247,25 @@
     }
   };
 
-  const onCheckAllHandler = (event) => {
+  const onCheckAllHandler = async (event) => {
     const checkAllButton = event.target;
-
-    todos = todos.map((elem) => ({ ...elem, checked: checkAllButton.checked }));
-    renderWithFilters();
+    
+    //проверяем по классу что нажат чекбокс selectAll 
+    if (checkAllButton.className === 'selectAll') {
+      try {
+        //запрос отмечает все todo как checked
+        const url = 'http://localhost:5000/todos/checkAllTodos';
+        const response = await fetch(url, {
+          method: 'PATCH'
+        });
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
+      }
+    }
   };
 
   const onDeleteSelectedHandler = async () => {
@@ -272,27 +286,40 @@
   const onBlurTextTodo = (event) => {
     const textToBlur = event.target;
 
+    //проверяем по классу что нажат текст в появившегося input
     if (textToBlur.className === 'inputEditingTodoText') {
-      const todoId = textToBlur.dataset.id; // получаем id
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+
+      // получаем dataset id
+      const todoDatasetId = textToBlur.dataset.id;
+
+      // Ищем задачу в массиве по ID (получаем индекс нажатой задачи)
+      const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
+
+      // trim() удаляет пробелы из начала и конца строки
       const textTern = textToBlur.value.trim() ? _.escape(textToBlur.value) : todos[todoIndex].text;
 
-      if (todoIndex !== -1) {
-        todos[todoIndex].isEditing = false;
-        todos[todoIndex].text = textTern;
-        renderWithFilters();
-      }
+      // меняем флаг
+      todos[todoIndex].isEditing = false;
+
+      // вставляем новый считанный текст
+      todos[todoIndex].text = textTern;
+
+      // рендер
+      renderWithFilters();
     }
+    
   };
 
   const onEditTextTodo = (event) => {
     const textToEdit = event.target;
 
+    //проверяем по классу что нажато
     if (textToEdit.className === 'descriptionTodo') {
-      const todoId = textToEdit.dataset.id; // получаем id
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+      //находим data id у нажатой todo
+      const todoDatasetId = textToEdit.dataset.id;
+
+      // Ищем задачу в массиве по ID (получаем индекс нажатой задачи)
+      const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
 
       if (todoIndex !== -1) { // если задача найдена
         todos[todoIndex].isEditing = true;
