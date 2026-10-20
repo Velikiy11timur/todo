@@ -283,7 +283,7 @@
     }
   };
 
-  const onBlurTextTodo = (event) => {
+  const onBlurTextTodo = async (event) => {
     const textToBlur = event.target;
 
     //проверяем по классу что нажат текст в появившегося input
@@ -296,24 +296,39 @@
       const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
 
       // trim() удаляет пробелы из начала и конца строки
+      // если значение пустое, то возвращает предыдущий текст
       const textTern = textToBlur.value.trim() ? _.escape(textToBlur.value) : todos[todoIndex].text;
 
-      // меняем флаг
+      // меняем флаг внутри массива todos (локально!)
       todos[todoIndex].isEditing = false;
 
-      // вставляем новый считанный текст
-      todos[todoIndex].text = textTern;
+      try {
+        const url = `http://localhost:5000/todo/update/${todoDatasetId}`;
+        const response = await fetch(url, {
+          method:'PATCH',
+          headers: {
+              'Content-type': 'application/json' 
+            },
+          body: JSON.stringify({text: textTern})
+        });
 
-      // рендер
-      renderWithFilters();
+        //если ошибка покажи статус
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+
+        //render from BD
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
+      }
     }
-    
   };
 
   const onEditTextTodo = (event) => {
     const textToEdit = event.target;
 
-    //проверяем по классу что нажато
+    //проверяем по классу что двойной клик был на тексте
     if (textToEdit.className === 'descriptionTodo') {
       //находим data id у нажатой todo
       const todoDatasetId = textToEdit.dataset.id;
@@ -321,13 +336,20 @@
       // Ищем задачу в массиве по ID (получаем индекс нажатой задачи)
       const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
 
-      if (todoIndex !== -1) { // если задача найдена
-        todos[todoIndex].isEditing = true;
-        renderWithFilters();
-        const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText'); // находим появившийся input
-        INPUT_EDITING_TODO_TEXT.focus(); // взять фокус на появившийся input (можно сразу печатать)
-        INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
-      }
+      //меняем флаг отвечающий за редактирование туду
+      todos[todoIndex].isEditing = true;
+
+      //рендер
+      renderWithFilters();
+      
+      // находим появившийся input
+      const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText');
+
+      // взять фокус на появившийся input (можно сразу печатать)
+      INPUT_EDITING_TODO_TEXT.focus();
+      
+      //блюрим
+      INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
     }
   };
 
