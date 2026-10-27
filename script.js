@@ -17,28 +17,22 @@
   let actualPage = 1;
 
   async function getTodos() {
-    //адрес запроса на получение в формате json todo объектов
     const url = 'http://localhost:5000/todos/getTodos';
 
-    try {
-      // await приостанавливает выполнение операции, пока не выполниться Promise fetch(url)
-      const response = await fetch(url);
-      if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      //деструктурировал массив туду, переименовываем ключ
+    fetch(url)
+    .then(res => res.json())
+    .then(result => {
       const { todos: todosFromDB } = result;
       todos = todosFromDB;
-      renderWithFilters();
-      //проверка чекбокса selectAll
-      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
-    } catch (error) {
-      console.error(error.message);
-    }
-  }
 
+      actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
+
+      renderWithFilters();
+    
+      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
+    })
+    .catch(error => console.error(error.message));
+  }
   getTodos();
   
   const TODOS_ON_PAGE = 7; // указали количество todo на странице*
@@ -154,21 +148,18 @@
       if (!response.ok) {
       throw new Error(`Response status: ${response.status}`);
       }
-      //конечный рендер
-      getTodos();
       
       // Очищаем поле ввода
       INPUT_TEXT_ELEMENT.value = '';
       
       // сброс чекбокса "все выполнено"
       CHECK_ALL_ELEMENT.checked = false;
-
+      
       //обновляем фильтр (при добавлении начальный экран)
       activeFilterId = 'allFilter';
-
-      // обновляем пагинацию
-      actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
-
+      
+      //конечный рендер
+      getTodos();
       } catch (error) {
         console.error('Не удалось создать задачу:', error.message);
       }
@@ -253,10 +244,15 @@
     //проверяем по классу что нажат чекбокс selectAll 
     if (checkAllButton.className === 'selectAll') {
       try {
+        
         //запрос отмечает все todo как checked
         const url = 'http://localhost:5000/todos/checkAllTodos';
         const response = await fetch(url, {
-          method: 'PATCH'
+          method: 'PATCH',
+          headers: {
+            'Content-type': 'application/json' 
+          },
+          body: JSON.stringify({checked: checkAllButton.checked})
         });
         if (!response.ok) {
           throw new Error(`Response status: ${response.status}`);
