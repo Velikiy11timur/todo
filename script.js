@@ -16,31 +16,41 @@
   let activeFilterId = 'allFilter';
   let actualPage = 1;
 
-  const TODOS_ON_PAGE = 5; // указали количество тудух на странице*
+  async function getTodos() {
+    const url = 'http://localhost:5000/todos/getTodos';
 
-  function createTodo(text) {
-    return {
-      id: Date.now(),
-      text, // можно использовать сокращенную запись
-      checked: false,
-      isEditing: false, // флаг отвечающий за редактирование
-    };
+    fetch(url)
+    .then(res => res.json())
+    .then(result => {
+      const { todos: todosFromDB } = result;
+      todos = todosFromDB;
+
+      actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
+
+      renderWithFilters();
+    
+      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
+    })
+    .catch(error => console.error(error.message));
   }
+  getTodos();
+  
+  const TODOS_ON_PAGE = 7; // указали количество todo на странице*
 
   function createTodoTemplate(todo) {
     return `
-  <div class="todo">
-    <input 
-      class="checkTodo" 
-      type="checkbox" 
-      data-id='${todo.id}'
-      ${todo.checked ? 'checked' : ''}
-    >
-    ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
-    <button data-id='${todo.id}' class="delete">X</button>
-  </div>
-  `;
-  } // эта функция взаимодействует с элементом массива todos уже созданным функцией createTodo.
+    <div class="todo">
+      <input 
+        class="checkTodo" 
+        type="checkbox" 
+        data-id='${todo.id}'
+        ${todo.checked ? 'checked' : ''}
+      >
+      ${todo.isEditing ? `<input class="inputEditingTodoText" data-id='${todo.id}' type="text" value="${todo.text}">` : `<p data-id='${todo.id}' class="descriptionTodo">${todo.text}</p>`}
+      <button data-id='${todo.id}' class="delete">X</button>
+    </div>
+    `;
+  }
 
   const renderFilterButtons = () => {
     const countAllTasks = todos.length; // считает длину массива
@@ -71,9 +81,10 @@
   const render = (todoData) => {
     CONTENT_ELEMENT.innerHTML = ''; // очистить контент внутри тега
 
+    // проверка чекбокса
     if (todos.length === 0) {
       CHECK_ALL_ELEMENT.checked = false;
-    } // проверка чекбокса
+    } 
 
     todoData.forEach((elem) => {
       CONTENT_ELEMENT.innerHTML += createTodoTemplate(elem);
@@ -97,7 +108,6 @@
       const newStart = (actualPage - 1) * TODOS_ON_PAGE;
       pagedTodos = filteredTodos.slice(newStart, newStart + TODOS_ON_PAGE);
     }
-
     render(pagedTodos);
     renderFilterButtons(); // отрисовать и счетчики на кнопках
     renderPaginationButtons(filteredTodos.length);
@@ -113,47 +123,111 @@
     renderWithFilters();
   };
 
-  const onAddButtonClickHandler = () => {
-    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value); // получаем значение из поля ввода
+  const onAddButtonClickHandler = async () => {
+    // получаем значение из поля ввода
+    const inputValue = _.escape(INPUT_TEXT_ELEMENT.value);
+    const objectTodoModel = {
+      text: inputValue,
+      checked: false,
+      isEditing: false,
+    }
+    // запрос который создает туду, принимая в теле запроса в формате json строку с параметрами
+    const url = 'http://localhost:5000/todo/create';
 
     if (inputValue) {
-      // Добавляем новую задачу (если значение пустое то if отрабатывает false)
-      todos.push(createTodo(inputValue));
-      INPUT_TEXT_ELEMENT.value = ''; // Очищаем поле ввода
-      CHECK_ALL_ELEMENT.checked = false;
-      activeFilterId = 'allFilter';
-      actualPage = Math.ceil(todos.length / TODOS_ON_PAGE);
-      renderWithFilters();
-    }
-  };
-
-  const onDeleteTodoHandler = (event) => {
-    const deleteButton = event.target;
-
-    if (deleteButton.className === 'delete') {
-      todos = todos.filter((todo) => {
-        if (todo.id !== Number(deleteButton.dataset.id)) {
-          return true;
-        }
-        return false;
+      try {
+      const response = await fetch(url, {
+        //сообщаем что метод будет POST, а не по умолчанию GET
+        method: 'POST',
+        //заголовок запроса сообщающий что тело запроса будет в формате json
+        headers: {
+          'Content-type': 'application/json' 
+        },
+        body: JSON.stringify(objectTodoModel)
       });
-      CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
-      renderWithFilters();
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      
+      // Очищаем поле ввода
+      INPUT_TEXT_ELEMENT.value = '';
+      
+      // сброс чекбокса "все выполнено"
+      CHECK_ALL_ELEMENT.checked = false;
+      
+      //обновляем фильтр (при добавлении начальный экран)
+      activeFilterId = 'allFilter';
+      
+      //конечный рендер
+      getTodos();
+      } catch (error) {
+        console.error('Не удалось создать задачу:', error.message);
+      }
     }
   };
 
-  const onCheckBoxOnHandler = (event) => {
+  const onDeleteTodoHandler = async (event) => {
+    const deleteButton = event.target;
+    
+    //проверяем по классу кнопки, нужная ли кнопка нажата
+    if (deleteButton.className === 'delete') {
+      try {
+      //находим dataset.id (которая является id todo)
+      const url = `http://localhost:5000/todo/deleteTodo/${event.target.dataset.id}`;
+      const response = await fetch(url, {
+        method:'DELETE',
+      });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      } catch (error) {
+        console.error(error.message);
+      }
+      getTodos();
+    }
+  };
+
+  const onCheckBoxOnHandler = async (event) => {
     const checkboxButton = event.target;
 
+    //проверяем по классу что нажат чекбокс на самой todo
     if (checkboxButton.classList.contains('checkTodo')) {
-      const todoId = checkboxButton.dataset.id; // Получаем ID
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+      try {
+        // Получаем ID нажатого чекбокса
+        const todoId = checkboxButton.dataset.id;
 
-      if (todoIndex !== -1) { // если задача найдена
-        todos[todoIndex].checked = checkboxButton.checked;
-        CHECK_ALL_ELEMENT.checked = todos.every((elem) => elem.checked !== false);
-        renderWithFilters();
+        //url на PATCH, принимает тело запроса
+        const url = `http://localhost:5000/todo/update/${todoId}`;
+
+        //находим индекс нажатой todo в массиве
+        const todoIndex = todos.findIndex(elem => elem.id === Number(todoId))
+
+        // находим состояние поля checked у найденной todo (true/false)
+        const todoStatus = () => {
+          return todos[todoIndex].checked;
+        }
+
+        //если todoStatus = true, то при нажатии на чекбокс меняется на false
+        const responseBody = todoStatus() ? false : true;
+        try {
+          const response = await fetch(url, {
+            method: 'PATCH',
+            //заголовок запроса сообщающий что тело запроса будет в формате json
+            headers: {
+              'Content-type': 'application/json' 
+            },
+            body: JSON.stringify({"checked":responseBody})
+          })
+          if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error(error.message);
+        }
+        //берем данные с БД + рендер
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
       }
     }
   };
@@ -164,32 +238,85 @@
     }
   };
 
-  const onCheckAllHandler = (event) => {
+  const onCheckAllHandler = async (event) => {
     const checkAllButton = event.target;
-
-    todos = todos.map((elem) => ({ ...elem, checked: checkAllButton.checked }));
-    renderWithFilters();
+    
+    //проверяем по классу что нажат чекбокс selectAll 
+    if (checkAllButton.className === 'selectAll') {
+      try {
+        
+        //запрос отмечает все todo как checked
+        const url = 'http://localhost:5000/todos/checkAllTodos';
+        const response = await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-type': 'application/json' 
+          },
+          body: JSON.stringify({checked: checkAllButton.checked})
+        });
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
+      }
+    }
   };
 
-  const onDeleteSelectedHandler = () => {
-    todos = todos.filter((item) => item.checked !== true); // выполняем проверку чекбокса
-    /* todos = todos.filter(item => !item.checked); */ // эквивалентно (чем меньше букав чем лучше)
-    renderWithFilters();
+  const onDeleteSelectedHandler = async () => {
+    const url = 'http://localhost:5000/todos/deleteChecked';
+    try {
+      const response = await fetch(url, {
+        method:'DELETE',
+      });
+      if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+      }
+      getTodos();
+    } catch (error) {
+      console.error(error.message);
+    }
   };
 
-  const onBlurTextTodo = (event) => {
+  const onBlurTextTodo = async (event) => {
     const textToBlur = event.target;
 
+    //проверяем по классу что нажат текст в появившегося input
     if (textToBlur.className === 'inputEditingTodoText') {
-      const todoId = textToBlur.dataset.id; // получаем id
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+
+      // получаем dataset id
+      const todoDatasetId = textToBlur.dataset.id;
+
+      // Ищем задачу в массиве по ID (получаем индекс нажатой задачи)
+      const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
+
+      // trim() удаляет пробелы из начала и конца строки
+      // если значение пустое, то возвращает предыдущий текст
       const textTern = textToBlur.value.trim() ? _.escape(textToBlur.value) : todos[todoIndex].text;
 
-      if (todoIndex !== -1) {
-        todos[todoIndex].isEditing = false;
-        todos[todoIndex].text = textTern;
-        renderWithFilters();
+      // меняем флаг внутри массива todos (локально!)
+      todos[todoIndex].isEditing = false;
+
+      try {
+        const url = `http://localhost:5000/todo/update/${todoDatasetId}`;
+        const response = await fetch(url, {
+          method:'PATCH',
+          headers: {
+              'Content-type': 'application/json' 
+            },
+          body: JSON.stringify({text: textTern})
+        });
+
+        //если ошибка покажи статус
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+
+        //render from BD
+        getTodos();
+      } catch (error) {
+        console.error(error.message);
       }
     }
   };
@@ -197,18 +324,28 @@
   const onEditTextTodo = (event) => {
     const textToEdit = event.target;
 
+    //проверяем по классу что двойной клик был на тексте
     if (textToEdit.className === 'descriptionTodo') {
-      const todoId = textToEdit.dataset.id; // получаем id
-      const findTodo = (currentTodo) => currentTodo.id === Number(todoId);
-      const todoIndex = todos.findIndex(findTodo); // Ищем задачу в массиве по ID
+      //находим data id у нажатой todo
+      const todoDatasetId = textToEdit.dataset.id;
 
-      if (todoIndex !== -1) { // если задача найдена
-        todos[todoIndex].isEditing = true;
-        renderWithFilters();
-        const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText'); // находим появившийся input
-        INPUT_EDITING_TODO_TEXT.focus(); // взять фокус на появившийся input (можно сразу печатать)
-        INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
-      }
+      // Ищем задачу в массиве по ID (получаем индекс нажатой задачи)
+      const todoIndex = todos.findIndex(currentTodo => currentTodo.id === Number(todoDatasetId));
+
+      //меняем флаг отвечающий за редактирование туду
+      todos[todoIndex].isEditing = true;
+
+      //рендер
+      renderWithFilters();
+      
+      // находим появившийся input
+      const INPUT_EDITING_TODO_TEXT = document.querySelector('.inputEditingTodoText');
+
+      // взять фокус на появившийся input (можно сразу печатать)
+      INPUT_EDITING_TODO_TEXT.focus();
+      
+      //блюрим
+      INPUT_EDITING_TODO_TEXT.addEventListener('blur', onBlurTextTodo);
     }
   };
 
